@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "FB Marketplace Boolean Filter",
+  "version": "1.0.0",
+  "description": "Filters Facebook Marketplace search results using advanced Boolean search syntax with auto-scroll.",
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": [
+    "https://www.facebook.com/marketplace/*",
+    "https://*.facebook.com/marketplace/*",
+    "https://facebook.com/marketplace/*"
+  ],
+  "action": {
+    "default_title": "Marketplace Filter",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/marketplace/*",
+        "https://*.facebook.com/marketplace/*",
+        "https://facebook.com/marketplace/*"
+      ],
+      "js": ["src/content/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content/domHandler.js",
+        "src/content/filterEngine.js",
+        "src/content/observer.js",
+        "src/content/scrollManager.js",
+        "utils/tokenizer.js",
+        "utils/parser.js",
+        "utils/evaluator.js",
+        "utils/wildcard.js"
+      ],
+      "matches": [
+        "https://www.facebook.com/*",
+        "https://*.facebook.com/*",
+        "https://facebook.com/*"
+      ]
+    }
+  ]
+}
+
