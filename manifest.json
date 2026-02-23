@@ -20,21 +20,21 @@
         "https://*.facebook.com/marketplace/*",
         "https://facebook.com/marketplace/*"
       ],
-      "js": ["src/content/content.js"],
+      "js": ["popup/content/content.js"],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
-        "src/content/domHandler.js",
-        "src/content/filterEngine.js",
-        "src/content/observer.js",
-        "src/content/scrollManager.js",
-        "utils/tokenizer.js",
-        "utils/parser.js",
-        "utils/evaluator.js",
-        "utils/wildcard.js"
+        "popup/content/domHandler.js",
+        "popup/content/filterEngine.js",
+        "popup/content/observer.js",
+        "popup/content/scrollManager.js",
+        "popup/utils/tokenizer.js",
+        "popup/utils/parser.js",
+        "popup/utils/evaluator.js",
+        "popup/utils/wildcard.js"
       ],
       "matches": [
         "https://www.facebook.com/*",

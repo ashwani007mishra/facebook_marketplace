@@ -22,11 +22,6 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, "popup"),
     emptyOutDir: true,
-    watch: {
-      // Ensure file changes trigger rebuild (helps on Windows)
-      usePolling: true,
-      interval: 300,
-    },
     rollupOptions: {
       input: resolve(__dirname, "src", "popup.html"),
       output: {

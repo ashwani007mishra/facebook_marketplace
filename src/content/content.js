@@ -129,6 +129,21 @@
     }
   }
 
+  function isOnMarketplacePage() {
+    try {
+      return (location.pathname || "").startsWith("/marketplace");
+    } catch {
+      return false;
+    }
+  }
+
+  function clearFilterAndStopObserving() {
+    observer.stop();
+    config = { query: "", pages: 10 };
+    matchesTitle = () => true;
+    refilterAll();
+  }
+
   function normalizeQueryForCompare(q) {
     try {
       return decodeURIComponent(String(q ?? "")).trim();
@@ -192,6 +207,7 @@
     if (!allowNavigate) return;
 
     try {
+      console.log("[FBMP] setting pending run:", config);
       sessionStorage.setItem(PENDING_KEY, JSON.stringify(config));
     } catch (e) {
       console.warn("[FBMP] Failed to persist pending run:", e);
@@ -210,6 +226,7 @@
       query: String(nextConfig?.query ?? "").trim(),
       pages: Math.max(0, Math.min(50, Number(nextConfig?.pages ?? 10)))
     };
+    console.log("[FBMP] startRun config:", { query: config.query, pages: config.pages }, "allowNavigate:", options.allowNavigate);
 
     if (config.query) {
       await triggerMarketplaceSearch(config.query, { allowNavigate });
@@ -268,6 +285,30 @@
   } catch (e) {
     console.warn("[FBMP] Failed to resume pending run:", e);
   }
+
+  console.log("[FBMP] ON LOAD pathname:", location.pathname, "search:", location.search, "isSearchPage:", isMarketplaceSearchPage(), "urlQuery:", getCurrentUrlSearchQuery(), "config.query:", config.query);
+
+  // React SPA: detect URL changes without full reload. When user navigates to
+  // non-search Marketplace (or leaves Marketplace), stop filtering and show all to avoid flicker.
+  let lastKnownUrl = location.pathname + location.search;
+  const URL_POLL_MS = 1000;
+
+  function onUrlChanged() {
+    if (isMarketplaceSearchPage()) return; // still on search page, keep current filter
+    clearFilterAndStopObserving();
+  }
+
+  const urlCheckInterval = setInterval(() => {
+    const current = location.pathname + location.search;
+    if (current === lastKnownUrl) return;
+    lastKnownUrl = current;
+    onUrlChanged();
+  }, URL_POLL_MS);
+
+  window.addEventListener("popstate", () => {
+    lastKnownUrl = location.pathname + location.search;
+    onUrlChanged();
+  });
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (!msg) return;
