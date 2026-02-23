@@ -229,7 +229,7 @@ export default function App() {
         </div>
       </section>
 
-      {recentSearches.length > 0 && (
+      {/* {recentSearches.length > 0 && (
         <section className="section">
           <div className="label">Recent searches</div>
           <div className="tag-list">
@@ -245,7 +245,7 @@ export default function App() {
             ))}
           </div>
         </section>
-      )}
+      )} */}
 
       <section className="section">
         <button className="button" type="button" onClick={handleStart}>

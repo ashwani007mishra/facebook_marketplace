@@ -44,7 +44,7 @@ function scheduleBuild() {
     console.log("\n[dev-watch] Change detected, building...");
     try {
       await runBuild();
-      await import("./copy-dev-content.js");
+      (await import("./copy-dev-content.js")).run();
       console.log("[dev-watch] Build done. Reload the extension if needed.\n");
     } catch (e) {
       console.error("[dev-watch] Build failed:", e?.message || e);
@@ -55,13 +55,15 @@ function scheduleBuild() {
 async function main() {
   console.log("[dev-watch] Watching for changes (src/, utils/). Initial build...");
   await runBuild();
-  await import("./copy-dev-content.js");
+  (await import("./copy-dev-content.js")).run();
   console.log("[dev-watch] Build done. Saving any file will trigger a new build.\n");
 
   const watcher = watch(WATCH_DIRS, {
     ignored: /(^|[/\\])(node_modules|\.git)[/\\]/,
     persistent: true,
     ignoreInitial: true,
+    usePolling: true,
+    interval: 300,
   });
 
   watcher

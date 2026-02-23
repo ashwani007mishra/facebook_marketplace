@@ -15,12 +15,12 @@ function relativeBasePlugin() {
   };
 }
 
-/** Development build: output to popup/, load extension from project root. */
+/** Development build: output to dist/ (same as production). Load extension from dist folder. */
 export default defineConfig({
   root: resolve(__dirname, "src"),
   plugins: [react(), relativeBasePlugin()],
   build: {
-    outDir: resolve(__dirname, "popup"),
+    outDir: resolve(__dirname, "dist"),
     emptyOutDir: true,
     rollupOptions: {
       input: resolve(__dirname, "src", "popup.html"),

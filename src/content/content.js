@@ -242,32 +242,32 @@
     refilterAll();
 
     // Scroll N pages, filtering as new results arrive.
-    if (config.pages > 0) {
-      try {
-        await autoScroll({
-          pages: config.pages,
-          getListingCount,
-          signal: runAbort.signal,
-          onAfterEach: () => {
-            // After scroll, do a quick pass (observer may have queued, but this ensures no gaps).
-            observer.flushNow();
-            scanAndFilter(document);
-          }
-        });
-      } catch (e) {
-        if (e?.name !== "AbortError") {
-          console.warn("[FBMP] autoScroll failed:", e);
-        }
-      }
-    }
+    // if (config.pages > 0) {
+    //   try {
+    //     await autoScroll({
+    //       pages: config.pages,
+    //       getListingCount,
+    //       signal: runAbort.signal,
+    //       onAfterEach: () => {
+    //         // After scroll, do a quick pass (observer may have queued, but this ensures no gaps).
+    //         observer.flushNow();
+    //         scanAndFilter(document);
+    //       }
+    //     });
+    //   } catch (e) {
+    //     if (e?.name !== "AbortError") {
+    //       console.warn("[FBMP] autoScroll failed:", e);
+    //     }
+    //   }
+    // }
 
-    // After the run completes, bring the user back to the first visible results
-    // so there isn't a big gap from previously hidden cards.
-    try {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch {
-      // noop
-    }
+    // // After the run completes, bring the user back to the first visible results
+    // // so there isn't a big gap from previously hidden cards.
+    // try {
+    //   window.scrollTo({ top: 0, behavior: "smooth" });
+    // } catch {
+    //   // noop
+    // }
   }
 
   // If we navigated to a search URL with a pending run, resume automatically.
