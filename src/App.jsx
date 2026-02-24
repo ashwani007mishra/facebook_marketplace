@@ -13,6 +13,16 @@ function parsePages(value) {
   return Math.max(0, Math.min(50, n));
 }
 
+function isFacebookUrl(url) {
+  try {
+    const u = new URL(String(url ?? ""));
+    if (u.protocol !== "https:") return false;
+    return /(^|\.)facebook\.com$/i.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function isMarketplaceUrl(url) {
   try {
     const u = new URL(String(url ?? ""));
@@ -114,8 +124,16 @@ export default function App() {
     return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
 
-  const handleOpenMarketplace = () => {
-    chrome.tabs.create({ url: MARKETPLACE_URL });
+  const handleOpenMarketplace = async () => {
+    const tab = await getActiveTab();
+    if (tab?.id && isFacebookUrl(tab?.url) && !isMarketplaceUrl(tab?.url)) {
+      await chrome.tabs.update(tab.id, { url: MARKETPLACE_URL });
+    } else {
+      await chrome.tabs.create({ url: MARKETPLACE_URL });
+    }
+    setTimeout(() => {
+      setIsOnMarketplace(true);
+    }, 3000);
   };
 
   const runSearch = async (queryValue, pagesValue) => {
@@ -197,14 +215,15 @@ export default function App() {
           id="query"
           className="textarea"
           rows={3}
-          placeholder='e.g. "restoration hardware"|crate sofa -velvet'
+          placeholder='e.g. "restoration hardware" | or OR "crate sofa" -velvet'
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="hint">
-          Spaces = AND, <code>|</code> = OR, <code>-</code> = NOT, quotes for phrase,{" "}
+          Spaces = AND, <code>|</code> or <code>OR</code> = OR, <code>-</code> = NOT, quotes for phrase,{" "}
           <code>*</code> for wildcard.
         </div>
+       
       </section>
 
       <section className="section row">

@@ -2,7 +2,7 @@
  * Tokenizer for the supported Boolean syntax:
  * - Spaces: implicit AND
  * - Quotes: phrase
- * - | : OR
+ * - | or word "OR" (case-insensitive) : OR
  * - - : NOT (prefix operator)
  * - ( ) : grouping (supported for scalability)
  *
@@ -107,6 +107,20 @@ export function tokenize(input) {
       if (normalized.length > 0) {
         tokens.push({ type: TokenType.PHRASE, value: normalized, pos: start });
       }
+      continue;
+    }
+
+    // Standalone word "OR" (case-insensitive) as OR operator.
+    const c0 = s[i];
+    const c1 = s[i + 1];
+    const next = s[i + 2];
+    const isOr =
+      (c0 === "o" || c0 === "O") &&
+      (c1 === "r" || c1 === "R") &&
+      (i + 2 >= len || isWs(next) || next === "|" || next === "(" || next === ")");
+    if (isOr) {
+      tokens.push({ type: TokenType.OR, pos: i });
+      i += 2;
       continue;
     }
 

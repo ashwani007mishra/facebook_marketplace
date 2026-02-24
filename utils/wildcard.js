@@ -3,9 +3,9 @@ function escapeRegExp(s) {
 }
 
 /**
- * Compiles a wildcard pattern into a fast matcher.
+ * Compiles a wildcard pattern into a fast matcher (SQL-like LIKE semantics).
  * Supported:
- * - Trailing '*' (prefix match): rest* => startsWith("rest")
+ * - Trailing '*' (prefix match, like SQL LIKE 'prefix%'): rest* => word.startsWith("rest")
  * - Any '*' (glob match) for resilience to "multiple wildcards"
  *
  * Matching is done against a single normalized word/token.
@@ -18,7 +18,7 @@ export function compileWildcard(rawPattern) {
   if (pattern === "*") return () => true;
   if (!pattern.includes("*")) return (w) => w === pattern;
 
-  // Fast path: single trailing '*'
+  // Fast path: single trailing '*' → SQL-like LIKE 'prefix%' per word
   const firstIdx = pattern.indexOf("*");
   const lastIdx = pattern.lastIndexOf("*");
   if (firstIdx === pattern.length - 1 && firstIdx === lastIdx) {

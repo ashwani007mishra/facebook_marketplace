@@ -152,6 +152,20 @@
     }
   }
 
+  /**
+   * Build a query string safe for Facebook's URL (SQL-like wildcard behavior).
+   * - If the query contains any wildcard (*): use the "letters before *" (prefix)
+   *   so Facebook returns a broad set of results. E.g. rest* → "rest", rest* | sofa → "rest | sofa".
+   * - Once results are loaded, the filter applies LIKE 'prefix%' per word (see wildcard.js).
+   * - If no wildcard: use the query as-is for the URL.
+   * Facebook does not support *, so we never send * in the URL.
+   */
+  function queryForFacebookUrl(query) {
+    const q = String(query ?? "").trim();
+    if (!q.includes("*")) return q;
+    return q.replace(/\*/g, "");
+  }
+
   function getCurrentUrlSearchQuery() {
     try {
       const url = new URL(location.href);
@@ -184,13 +198,14 @@
    */
   async function triggerMarketplaceSearch(query, { allowNavigate = true } = {}) { 
     const queryTrimmed = String(query ?? "").trim();
+    const urlQuery = queryForFacebookUrl(queryTrimmed);
     const onSearchPage = isMarketplaceSearchPage();
 
     if (onSearchPage) {
       const currentUrlQuery = getCurrentUrlSearchQuery();
       console.log("[FBMP] currentUrlQuery:", currentUrlQuery);
-      const newQueryNorm = normalizeQueryForCompare(queryTrimmed);
-      if (currentUrlQuery === newQueryNorm) {
+      const newUrlQueryNorm = normalizeQueryForCompare(urlQuery);
+      if (currentUrlQuery === newUrlQueryNorm) {
         return;
       }
       if (allowNavigate) {
@@ -199,7 +214,7 @@
         } catch (e) {
           console.warn("[FBMP] Failed to persist pending run:", e);
         }
-        location.href = buildMarketplaceSearchUrl(queryTrimmed);
+        location.href = buildMarketplaceSearchUrl(urlQuery);
       }
       return;
     }
@@ -212,7 +227,7 @@
     } catch (e) {
       console.warn("[FBMP] Failed to persist pending run:", e);
     }
-    location.href = buildMarketplaceSearchUrl(queryTrimmed);
+    location.href = buildMarketplaceSearchUrl(urlQuery);
   }
 
   async function startRun(nextConfig, options = {}) {
