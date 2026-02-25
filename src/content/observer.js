@@ -1,16 +1,18 @@
 /**
  * MutationObserver wrapper tuned for React-based infinite scroll DOM.
  * - Debounced to avoid thrashing during re-renders
+ * - Cooldown after flush to reduce flicker when sort causes repeated DOM churn
  * - Collects added element roots to allow incremental scanning
  */
 
 export class ListingsObserver {
   /**
-   * @param {{ onChange: (roots: HTMLElement[]) => void, debounceMs?: number }} opts
+   * @param {{ onChange: (roots: HTMLElement[]) => void, debounceMs?: number, cooldownMs?: number }} opts
    */
-  constructor({ onChange, debounceMs = 200 }) {
+  constructor({ onChange, debounceMs = 350, cooldownMs = 500 }) {
     this.onChange = onChange;
     this.debounceMs = debounceMs;
+    this.cooldownMs = cooldownMs;
 
     /** @type {MutationObserver|null} */
     this.observer = null;
@@ -18,6 +20,8 @@ export class ListingsObserver {
     this.timer = null;
     /** @type {Set<HTMLElement>} */
     this.pendingRoots = new Set();
+    /** @type {number} */
+    this.lastFlushTime = 0;
   }
 
   start(root = document.body) {
@@ -52,14 +56,20 @@ export class ListingsObserver {
 
   #scheduleFlush() {
     if (this.timer) return;
+    const now = Date.now();
+    const sinceFlush = now - this.lastFlushTime;
+    const wait = sinceFlush < this.cooldownMs
+      ? this.cooldownMs - sinceFlush
+      : this.debounceMs;
     this.timer = setTimeout(() => {
       this.timer = null;
       this.#flush();
-    }, this.debounceMs);
+    }, wait);
   }
 
   #flush() {
     if (this.pendingRoots.size === 0) return;
+    this.lastFlushTime = Date.now();
     const roots = Array.from(this.pendingRoots);
     this.pendingRoots.clear();
     try {

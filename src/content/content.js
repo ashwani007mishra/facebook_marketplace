@@ -107,9 +107,15 @@
   }
 
   const observer = new ListingsObserver({
-    debounceMs: 200,
+    debounceMs: 350,
+    cooldownMs: 500,
     onChange: (roots) => {
-      for (const r of roots) scanAndFilter(r);
+      // When sort causes many DOM updates, do one full pass to reduce flicker.
+      if (roots.length > 12) {
+        refilterAll();
+      } else {
+        for (const r of roots) scanAndFilter(r);
+      }
     }
   });
 
@@ -196,10 +202,18 @@
    *   If URL has no query or different query, navigate so the URL gets ?query=...
    * - On non-search pages: store pending config and navigate to the search URL.
    */
+  /** Delay (ms) before navigating so the popup can show status before Chrome closes it. */
+  const NAV_DELAY_MS = 400;
+
   async function triggerMarketplaceSearch(query, { allowNavigate = true } = {}) { 
     const queryTrimmed = String(query ?? "").trim();
     const urlQuery = queryForFacebookUrl(queryTrimmed);
     const onSearchPage = isMarketplaceSearchPage();
+
+    const doNavigate = (targetUrl) => {
+      if (!targetUrl) return;
+      location.href = targetUrl;
+    };
 
     if (onSearchPage) {
       const currentUrlQuery = getCurrentUrlSearchQuery();
@@ -214,7 +228,7 @@
         } catch (e) {
           console.warn("[FBMP] Failed to persist pending run:", e);
         }
-        location.href = buildMarketplaceSearchUrl(urlQuery);
+        setTimeout(() => doNavigate(buildMarketplaceSearchUrl(urlQuery)), NAV_DELAY_MS);
       }
       return;
     }
@@ -227,7 +241,7 @@
     } catch (e) {
       console.warn("[FBMP] Failed to persist pending run:", e);
     }
-    location.href = buildMarketplaceSearchUrl(urlQuery);
+    setTimeout(() => doNavigate(buildMarketplaceSearchUrl(urlQuery)), NAV_DELAY_MS);
   }
 
   async function startRun(nextConfig, options = {}) {

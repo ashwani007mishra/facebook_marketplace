@@ -148,6 +148,7 @@ export default function App() {
       const resp = await sendStartMessage({ query: queryTrimmed, pages: pagesNum });
       if (queryTrimmed) updateRecentSearches(queryTrimmed);
       setStatus(resp?.ok ? "Running. Check the page." : "Sent. Check the page.");
+      window.close();
     } catch (e) {
       const msg = String(e?.message ?? e);
       setStatus(

@@ -75,16 +75,6 @@ function looksLikeMeta(text) {
   return false;
 }
 
-function scoreTitleCandidate(text) {
-  const t = text.trim();
-  const letters = (t.match(/[A-Za-z]/g) || []).length;
-  const digits = (t.match(/\d/g) || []).length;
-  const words = t.split(/\s+/).filter(Boolean).length;
-
-  // Prefer more letters and a few words; penalize very numeric strings.
-  return letters * 2 + words * 3 - digits * 2 - Math.max(0, t.length - 80);
-}
-
 function extractTitleFromCard(cardEl, anchorEl) {
   // Try the anchor text first (often contains title + maybe price/meta).
   const anchorText = normalizeText(anchorEl?.innerText || "");
@@ -110,49 +100,15 @@ function extractTitleFromCard(cardEl, anchorEl) {
 
   if (candidates.length === 0) return "";
 
-  // Pick the highest-scoring candidate.
-  let best = candidates[0];
-  let bestScore = scoreTitleCandidate(best);
-  for (let i = 1; i < candidates.length; i++) {
-    const s = scoreTitleCandidate(candidates[i]);
-    if (s > bestScore) {
-      best = candidates[i];
-      bestScore = s;
-    }
-  }
-
-  return best;
-}
-
-/** Text that marks the "Results from outside your search" section we do not filter. */
-const OUTSIDE_SEARCH_LABEL = "Results from outside your search";
-
-/**
- * Find the section root that contains "Results from outside your search".
- * We do not filter or modify listings inside this section.
- * @returns {HTMLElement|null}
- */
-function getOutsideSearchSectionRoot() {
-  if (!document.body) return null;
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_ELEMENT,
-    null,
-    false
-  );
-  let node;
-  while ((node = walker.nextNode())) {
-    const text = (node.textContent || "").trim();
-    if (text.includes(OUTSIDE_SEARCH_LABEL) || text.includes("outside your search")) {
-      return node instanceof HTMLElement ? node : node.parentElement;
-    }
-  }
-  return null;
+  // Combine all candidates so the filter sees full text (e.g. "repair" in "Water Heater Repair and Installation").
+  const combined = [...new Set(candidates)].join(" ");
+  const maxLen = 400;
+  return combined.length <= maxLen ? combined : combined.slice(0, maxLen);
 }
 
 /**
  * Extract listing cards from a subtree.
- * Listings inside "Results from outside your search" are excluded and left untouched.
+ * All listings (including "Results from outside your search") are included so the boolean filter applies everywhere.
  *
  * @param {ParentNode} root
  * @returns {{ cardEl: HTMLElement, anchorEl: HTMLAnchorElement, id: string|null, title: string }[]}
@@ -163,15 +119,12 @@ export function extractListings(root = document) {
   );
   if (!anchors || anchors.length === 0) return [];
 
-  const outsideRoot = getOutsideSearchSectionRoot();
-
   /** @type {{ cardEl: HTMLElement, anchorEl: HTMLAnchorElement, id: string|null, title: string }[]} */
   const out = [];
   const seenCard = new WeakSet();
 
   for (const a of anchors) {
     if (!(a instanceof HTMLAnchorElement)) continue;
-    if (outsideRoot && outsideRoot.contains(a)) continue;
 
     const href = getHref(a);
     const id = extractIdFromHref(href);
